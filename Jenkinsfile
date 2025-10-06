@@ -74,10 +74,29 @@ pipeline {
 
         stage('Build') {
             steps {
-                withMaven(traceability: true) {
+                withMaven(options: [artifactsPublisher(fingerprintFilesDisabled: true, archiveFilesDisabled: true)], traceability: true) {
                     // Execute Maven build
                     sh "mvn -s ${env.MVN_SETTINGS} clean package"
                 }
+            }
+        }
+
+        stage('Analyze build results') {
+            steps {
+                recordIssues(
+                    aggregatingResults: true,
+                    tools: [
+                        java(),
+                        javaDoc(),
+                        mavenConsole(),
+                        taskScanner(
+                            highTags: 'FIXME',
+                            normalTags: 'TODO',
+                            includePattern: '**/*.java',
+                            excludePattern: 'target/**/*'
+                        )
+                    ]
+                )
             }
         }
 
