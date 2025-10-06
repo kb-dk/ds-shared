@@ -53,6 +53,25 @@ pipeline {
             }
         }
 
+        stage('Change dependencies') {
+            when {
+                expression {
+                    params.ORIGINAL_BRANCH ==~ "PR-[0-9]+"
+                }
+            }
+            steps {
+                script {
+                    switch (params.ORIGINAL_JOB) {
+                        case ['ds-parent']:
+                            sh "mvn -s ${env.MVN_SETTINGS} versions:use-dep-version -Dincludes=dk.kb.dsparent:* -DdepVersion=${params.ORIGINAL_BRANCH}-${params.ORIGINAL_JOB}-ds-parent-SNAPSHOT -DforceVersion=true"
+
+                            echo "Changing MVN dependency ds-parent to: ${params.ORIGINAL_BRANCH}-${params.ORIGINAL_JOB}-ds-parent-SNAPSHOT"
+                            break
+                    }
+                }
+            }
+        }
+
         stage('Build') {
             steps {
                 withMaven(traceability: true) {
