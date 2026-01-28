@@ -15,20 +15,20 @@ pipeline {
     }
 
     parameters {
-        string(name: 'Version', defaultValue: "X.X.X", description: 'Version to release')
+        string(name: 'VERSION', defaultValue: "X.X.X", description: 'Version to release')
     }
 
     stages {
         stage('Echo Environment Variables') {
             steps {
-                echo "Version: ${params.Version}"
+                echo "Version: ${params.VERSION}"
             }
         }
 
         stage('Check Version') {
             steps {
                 script {
-                    if ( !params.Version || params.Version == 'X.X.X' ) {
+                    if ( !params.VERSION || params.VERSION == 'X.X.X' ) {
                         currentBuild.description = "No valid version"
                         currentBuild.result = 'ABORTED'
                         error("Stopping pipeline: No valid version is set.")
@@ -40,8 +40,8 @@ pipeline {
         stage('Change version') {
             steps {
                 withMaven(options: [artifactsPublisher(fingerprintFilesDisabled: true, archiveFilesDisabled: true)], traceability: true, mavenLocalRepo: "${WORKSPACE}/repository") {
-                    sh "mvn versions:set -DnewVersion=${params.Version} -DgenerateBackupPoms=false"
-                    echo "Changing MVN version to: ${params.Version}"
+                    sh "mvn versions:set -DnewVersion=${params.VERSION} -DgenerateBackupPoms=false"
+                    echo "Changing MVN version to: ${params.VERSION}"
                 }
             }
         }
@@ -49,8 +49,8 @@ pipeline {
         stage('Update parent') {
             steps {
                 withMaven(options: [artifactsPublisher(fingerprintFilesDisabled: true, archiveFilesDisabled: true)], traceability: true, mavenLocalRepo: "${WORKSPACE}/repository") {
-                    sh """sed -i "/<parent>/,/<version>/ s/<version>.*<\/version>/<version>${params.Version}<\/version>/" pom.xml"""
-                    echo "Changing parent to: ${params.Version}"
+                    sh """sed -i "/<parent>/,/<version>/ s/<version>.*<\/version>/<version>${params.VERSION}<\/version>/" pom.xml"""
+                    echo "Changing parent to: ${params.VERSION}"
                 }
             }
         }
@@ -58,8 +58,8 @@ pipeline {
         stage('Change dependencies') {
             steps {
                 withMaven(options: [artifactsPublisher(fingerprintFilesDisabled: true, archiveFilesDisabled: true)], traceability: true, mavenLocalRepo: "${WORKSPACE}/repository") {
-                    sh "mvn versions:use-dep-version -Dincludes=dk.kb.dsshared:*,dk.kb.storage:*,dk.kb.license:*,dk.kb.present:*,dk.kb.kaltura:* -DdepVersion=${params.Version} -DforceVersion=true -DgenerateBackupPoms=false"
-                    echo "Changing MVN dependencies to: ${params.Version}"
+                    sh "mvn versions:use-dep-version -Dincludes=dk.kb.dsshared:*,dk.kb.storage:*,dk.kb.license:*,dk.kb.present:*,dk.kb.kaltura:* -DdepVersion=${params.VERSION} -DforceVersion=true -DgenerateBackupPoms=false"
+                    echo "Changing MVN dependencies to: ${params.VERSION}"
                 }
             }
         }
