@@ -1,0 +1,69 @@
+pipeline {
+    agent {
+        label 'DS agent'
+    }
+
+    options {
+        disableConcurrentBuilds()
+        timeout(time: 40, unit: 'MINUTES')
+        buildDiscarder(logRotator(numToKeepStr: '5'))
+    }
+
+    environment {
+        PROJECT = 'ds-shared'
+        BUILD_TO_TRIGGER = 'ds-storage'
+    }
+
+    parameters {
+        string(name: 'Version', defaultValue: "X.X.X", description: 'Version to release')
+    }
+
+    stages {
+        stage('Echo Environment Variables') {
+            steps {
+                echo "Version: ${params.Version}"
+            }
+        }
+
+        stage('Check Version') {
+            steps {
+                script {
+                    if ( !params.Version || params.Version == 'X.X.X' ) {
+                        currentBuild.description = "No valid version"
+                        currentBuild.result = 'ABORTED'
+                        error("Stopping pipeline: No valid version is set.")
+                    }
+                }
+            }
+        }
+
+        stage('Change version') {
+            steps {
+                withMaven(options: [artifactsPublisher(fingerprintFilesDisabled: true, archiveFilesDisabled: true)], traceability: true, mavenLocalRepo: "${WORKSPACE}/repository") {
+                    sh "mvn versions:set -DnewVersion=${params.Version}"
+                    echo "Changing MVN version to: ${params.Version}"
+                }
+            }
+        }
+
+        stage('Change parent') {
+            steps {
+                withMaven(options: [artifactsPublisher(fingerprintFilesDisabled: true, archiveFilesDisabled: true)], traceability: true, mavenLocalRepo: "${WORKSPACE}/repository") {
+                    sh "sed -i '/<parent>/,/<version>/ s/<version>.*<\/version>/<version>DRA-2489-SNAPSHOT<\/version>/' pom.xml"
+                    echo "Changing Parent version to: ${params.Version}"
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                withMaven(options: [artifactsPublisher(fingerprintFilesDisabled: true, archiveFilesDisabled: true)], traceability: true, mavenLocalRepo: "${WORKSPACE}/repository") {
+                    // Execute Maven build
+                    // We don't want to build child modules so we use this flag to disable it --non-recursive https://maven.apache.org/guides/mini/guide-multiple-modules.html#command-line-options
+                    sh "mvn clean package --non-recursive"
+                }
+            }
+        }
+
+    }
+}
