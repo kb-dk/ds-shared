@@ -55,12 +55,11 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Release to Nexus') {
             steps {
                 withMaven(options: [artifactsPublisher(fingerprintFilesDisabled: true, archiveFilesDisabled: true)], traceability: true, mavenLocalRepo: "${WORKSPACE}/repository") {
-                    // Execute Maven build
-                    // We don't want to build child modules so we use this flag to disable it --non-recursive https://maven.apache.org/guides/mini/guide-multiple-modules.html#command-line-options
-                    sh "mvn clean package --non-recursive"
+                    // Execute Maven Release
+                    sh "mvn clean deploy"
                 }
             }
         }
