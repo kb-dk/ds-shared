@@ -46,11 +46,11 @@ pipeline {
             }
         }
 
-        stage('Change parent') {
+        stage('Change dependencies') {
             steps {
                 withMaven(options: [artifactsPublisher(fingerprintFilesDisabled: true, archiveFilesDisabled: true)], traceability: true, mavenLocalRepo: "${WORKSPACE}/repository") {
-                    sh "sed -i '/<parent>/,/<version>/ s/<version>.*<\/version>/<version>DRA-2489-SNAPSHOT<\/version>/' pom.xml"
-                    echo "Changing Parent version to: ${params.Version}"
+                    sh "mvn versions:use-dep-version -Dincludes=dk.kb.dsparent:* -DdepVersion=${params.Version} -DforceVersion=true"
+                    echo "Changing MVN dependencies to: ${params.Version}"
                 }
             }
         }
