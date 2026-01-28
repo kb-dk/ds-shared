@@ -40,8 +40,17 @@ pipeline {
         stage('Change version') {
             steps {
                 withMaven(options: [artifactsPublisher(fingerprintFilesDisabled: true, archiveFilesDisabled: true)], traceability: true, mavenLocalRepo: "${WORKSPACE}/repository") {
-                    sh "mvn versions:set -DnewVersion=${params.Version}"
+                    sh "mvn versions:set -DnewVersion=${params.Version} -DgenerateBackupPoms=false"
                     echo "Changing MVN version to: ${params.Version}"
+                }
+            }
+        }
+
+        stage('Update parent') {
+            steps {
+                withMaven(options: [artifactsPublisher(fingerprintFilesDisabled: true, archiveFilesDisabled: true)], traceability: true, mavenLocalRepo: "${WORKSPACE}/repository") {
+                    sh "mvn versions:update-parent -DparentVersion=${params.Version} -DgenerateBackupPoms=false"
+                    echo "Changing parent to: ${params.Version}"
                 }
             }
         }
@@ -49,7 +58,7 @@ pipeline {
         stage('Change dependencies') {
             steps {
                 withMaven(options: [artifactsPublisher(fingerprintFilesDisabled: true, archiveFilesDisabled: true)], traceability: true, mavenLocalRepo: "${WORKSPACE}/repository") {
-                    sh "mvn versions:use-dep-version -Dincludes=dk.kb.dsparent:* -DdepVersion=${params.Version} -DforceVersion=true"
+                    sh "mvn versions:use-dep-version -Dincludes=dk.kb.dsshared,dk.kb.storage:* -DdepVersion=${params.Version} -DforceVersion=true -DgenerateBackupPoms=false"
                     echo "Changing MVN dependencies to: ${params.Version}"
                 }
             }
