@@ -58,7 +58,7 @@ pipeline {
         stage('Change dependencies') {
             steps {
                 withMaven(options: [artifactsPublisher(fingerprintFilesDisabled: true, archiveFilesDisabled: true)], traceability: true, mavenLocalRepo: "${WORKSPACE}/repository") {
-                    sh "mvn versions:use-dep-version -Dincludes=dk.kb.dsshared,dk.kb.storage:* -DdepVersion=${params.Version} -DforceVersion=true -DgenerateBackupPoms=false"
+                    sh "mvn versions:use-dep-version -Dincludes=dk.kb.dsshared:*,dk.kb.storage:*,dk.kb.license:*,dk.kb.present:*,dk.kb.kaltura:* -DdepVersion=${params.Version} -DforceVersion=true -DgenerateBackupPoms=false"
                     echo "Changing MVN dependencies to: ${params.Version}"
                 }
             }
